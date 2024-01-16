@@ -36,11 +36,11 @@ certoraRun  certora/conf/allProps.conf \
             --msg "2. slashing_cant_occur_during_post_slashing_period"
 
 echo "3:"
-certoraRun  certora/conf/propertiesWithSummarization.conf --rule_sanity basic  \
+certoraRun  certora/conf/propertiesWithSummarization.conf \
             --msg "3. propertiesWithSummarization.conf"
 
 echo "4:"
-certoraRun  certora/conf/invariants.conf --rule_sanity basic  \
+certoraRun  certora/conf/invariants.conf \
             --msg "4. invariants.conf"
 
 echo "5:"
@@ -58,4 +58,9 @@ certoraRun  certora/conf/frontRun.conf   \
             --rule front_run__cooldown_info \
             --msg "7. frontRun.conf:: front_run__cooldown_info"
 
+echo "8:"
+certoraRun  certora/conf/frontRun.conf   \
+            --rule front_run__stake \
+#            --rule_sanity none \
+            --msg "8. frontRun.conf:: front_run__stake"
 
