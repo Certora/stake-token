@@ -32,7 +32,8 @@ use invariant calculated_bal_LEQ_real_bal;
    Status: PASS
    ==================================================================*/
 rule front_run__redeem(method f, env e) filtered {
-    f -> !f.isView && f.contract == currentContract && !is_admin_func(f) }
+    f -> !f.isView && f.contract == currentContract && !is_admin_func(f)
+        && f.selector != sig:redeemOnBehalf(address,address,uint256).selector}
 {
     address alice; address bob; uint256 amount_to_redeem;
 
@@ -81,6 +82,43 @@ rule front_run__redeem(method f, env e) filtered {
     assert alice_bal_after1 <= alice_bal_after2;
 }
 
+/* ====================================================================
+   Part of Alice calls to redeem. Here Bob calls redeemOnBehalf(...).
+
+   Status: PASS
+   ==================================================================*/
+rule front_run__redeem__on_redeemOnBahalf(env e) {
+    address alice; address bob; uint256 amount_to_redeem;
+
+    require alice != bob; require alice != currentContract; require bob != currentContract;
+    require alice != reward_token; require alice != reward_vault;
+    require_feasible_state(e,alice);
+    require balanceOf(alice) + balanceOf(bob) <= sumAllBalance;
+
+    storage initialStorage = lastStorage;
+
+    uint256 alice_bal_before1 = stake_token.balanceOf(alice);
+    redeemOnBehalf@withrevert(e,alice,alice,amount_to_redeem);
+    require !lastReverted;
+    uint256 alice_bal_after1 = stake_token.balanceOf(alice);
+
+    // Here we start with the same initial-storage
+    uint256 alice_bal_before2 = stake_token.balanceOf(alice) at initialStorage;
+    env e2;  require e2.msg.sender==bob;
+    require e2.block.timestamp <= e.block.timestamp;
+    require_feasible_state(e2,bob);
+
+        address from; address to; uint256 a;
+        require (from != alice);
+        redeemOnBehalf(e2,from,to,a);
+    
+    redeemOnBehalf@withrevert(e, alice,alice,amount_to_redeem);
+    assert !lastReverted;
+    uint256 alice_bal_after2 = stake_token.balanceOf(alice);
+
+    assert alice_bal_before1 == alice_bal_before2;
+    assert alice_bal_after1 <= alice_bal_after2;
+}
 
 
 
@@ -235,7 +273,8 @@ rule front_run__cooldown_info(method f, env e) filtered {
    Status: PASS
    ==================================================================*/
 rule front_run__stake(method f, env e) filtered {
-    f -> !f.isView && f.contract == currentContract && !is_admin_func(f) }
+    f -> !f.isView && f.contract == currentContract && !is_admin_func(f)
+    && f.selector != sig:stakeWithPermit(uint256,uint256,uint8,bytes32,bytes32).selector }
 {
     address alice; address bob; uint256 amount_to_stake;
 
@@ -292,7 +331,11 @@ rule front_run__stake(method f, env e) filtered {
     assert alice_bal_after1 <= alice_bal_after2;
 }
 
-//stakeWithPermit(uint256,uint256,uint8,bytes32,bytes32)
+/* ====================================================================
+   Part of Alice calls to stake, but Bob calls stakeWithPermit(...).
+
+   Status: PASS
+   ==================================================================*/
 rule front_run__stake__on_stakeWithPermit(env e) {
     address alice; address bob; uint256 amount_to_stake;
 
@@ -330,36 +373,3 @@ rule front_run__stake__on_stakeWithPermit(env e) {
 }
 
 
-
-rule front_run__redeem__on_redeemOnBahalf(env e) {
-    address alice; address bob; uint256 amount_to_redeem;
-
-    require alice != bob; require alice != currentContract; require bob != currentContract;
-    require alice != reward_token; require alice != reward_vault;
-    require_feasible_state(e,alice);
-    require balanceOf(alice) + balanceOf(bob) <= sumAllBalance;
-
-    storage initialStorage = lastStorage;
-
-    uint256 alice_bal_before1 = stake_token.balanceOf(alice);
-    redeemOnBehalf@withrevert(e,alice,alice,amount_to_redeem);
-    require !lastReverted;
-    uint256 alice_bal_after1 = stake_token.balanceOf(alice);
-
-    // Here we start with the same initial-storage
-    uint256 alice_bal_before2 = stake_token.balanceOf(alice) at initialStorage;
-    env e2;  require e2.msg.sender==bob;
-    require e2.block.timestamp <= e.block.timestamp;
-    require_feasible_state(e2,bob);
-
-        address from; address to; uint256 a;
-        require (from != alice);
-        redeemOnBehalf(e2,from,to,a);
-    
-    redeemOnBehalf@withrevert(e, alice,alice,amount_to_redeem);
-    assert !lastReverted;
-    uint256 alice_bal_after2 = stake_token.balanceOf(alice);
-
-    assert alice_bal_before1 == alice_bal_before2;
-    assert alice_bal_after1 <= alice_bal_after2;
-}
