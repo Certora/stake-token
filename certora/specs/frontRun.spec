@@ -292,53 +292,8 @@ rule front_run__stake(method f, env e) filtered {
     assert alice_bal_after1 <= alice_bal_after2;
 }
 
-
-/*
-rule front_run__redeem_with_revert_redeem(env e)
-{
-    address alice; address bob; uint256 amount_to_redeem;
-
-    require alice != bob; require alice != currentContract; require bob != currentContract;
-    require alice != reward_token; require alice != reward_vault;
-    require bob != reward_token; require bob != reward_vault;
-    //require alice ==10;  require bob ==20; require currentContract==33; require stake_token==44;
-    require_feasible_state(e,alice);
-    require balanceOf(alice) + balanceOf(bob) <= sumAllBalance;
-    
-    storage initialStorage = lastStorage;
-
-    uint256 alice_bal_before1 = stake_token.balanceOf(alice);
-    //    require alice_bal_before1 <= 500;
-    //require stake_token.balanceOf(currentContract) <= 500;
-    redeemOnBehalf@withrevert(e,alice,alice,amount_to_redeem);
-    require !lastReverted;
-    uint256 alice_bal_after1 = stake_token.balanceOf(alice);
-
-
-    // Here we start with the same initial-storage
-    uint256 alice_bal_before2 = stake_token.balanceOf(alice) at initialStorage;
-    
-    env e2;  require e2.msg.sender==bob;
-    require e2.block.timestamp <= e.block.timestamp;
-    require_feasible_state(e2,bob);
-    uint256 amount_bob_redeems;
-    redeem(e2,bob,amount_bob_redeems);
-    
-    redeemOnBehalf@withrevert(e, alice,alice,amount_to_redeem);
-    assert !lastReverted;
-    uint256 alice_bal_after2 = stake_token.balanceOf(alice);
-
-    assert alice_bal_before1 == alice_bal_before2;
-    assert alice_bal_after1 <= alice_bal_after2;
-}
-*/
-
-
-
-
-
-
-rule front_run__stake___stake(env e) {
+//stakeWithPermit(uint256,uint256,uint8,bytes32,bytes32)
+rule front_run__stake__on_stakeWithPermit(env e) {
     address alice; address bob; uint256 amount_to_stake;
 
     require alice != bob; require alice != currentContract; require bob != currentContract;
@@ -347,10 +302,7 @@ rule front_run__stake___stake(env e) {
     require_feasible_state(e,alice);
     require (to_mathint(getExchangeRate()) <= 100*EXCHANGE_RATE_UNIT() );
     require totalSupply() <= AAVE_MAX_SUPPLY();
-
     require balanceOf(alice) + balanceOf(bob) <= sumAllBalance;
-
-    require alice==10 && bob==20 && currentContract==555;
 
     storage initialStorage = lastStorage;
 
@@ -364,11 +316,11 @@ rule front_run__stake___stake(env e) {
     env e2;  require e2.msg.sender==bob;
     require e2.block.timestamp <= e.block.timestamp;
     require_feasible_state(e2,bob);
-    calldataarg args;
-    address to; uint256 amount_in_e2;
-    stake(e2, to, amount_in_e2);
 
+    uint256 amount; uint256 deadline; uint8 v; bytes32 r; bytes32 s;
+    stakeWithPermit(e2,amount,deadline,v,r,s);
     
+    // alice operation 
     stake@withrevert(e,alice,amount_to_stake);
     assert !lastReverted;
     uint256 alice_bal_after2 = stake_token.balanceOf(alice);
@@ -378,3 +330,36 @@ rule front_run__stake___stake(env e) {
 }
 
 
+
+rule front_run__redeem__on_redeemOnBahalf(env e) {
+    address alice; address bob; uint256 amount_to_redeem;
+
+    require alice != bob; require alice != currentContract; require bob != currentContract;
+    require alice != reward_token; require alice != reward_vault;
+    require_feasible_state(e,alice);
+    require balanceOf(alice) + balanceOf(bob) <= sumAllBalance;
+
+    storage initialStorage = lastStorage;
+
+    uint256 alice_bal_before1 = stake_token.balanceOf(alice);
+    redeemOnBehalf@withrevert(e,alice,alice,amount_to_redeem);
+    require !lastReverted;
+    uint256 alice_bal_after1 = stake_token.balanceOf(alice);
+
+    // Here we start with the same initial-storage
+    uint256 alice_bal_before2 = stake_token.balanceOf(alice) at initialStorage;
+    env e2;  require e2.msg.sender==bob;
+    require e2.block.timestamp <= e.block.timestamp;
+    require_feasible_state(e2,bob);
+
+        address from; address to; uint256 a;
+        require (from != alice);
+        redeemOnBehalf(e2,from,to,a);
+    
+    redeemOnBehalf@withrevert(e, alice,alice,amount_to_redeem);
+    assert !lastReverted;
+    uint256 alice_bal_after2 = stake_token.balanceOf(alice);
+
+    assert alice_bal_before1 == alice_bal_before2;
+    assert alice_bal_after1 <= alice_bal_after2;
+}
