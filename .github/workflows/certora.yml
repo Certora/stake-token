@@ -53,12 +53,16 @@ jobs:
       max-parallel: 15 
       matrix:
         rule:
-          - propertiesWithSummarization.conf
-          - invariants.conf
-          - allProps.conf --rule  integrityOfStaking  noStakingPostSlashingPeriod noSlashingMoreThanMax integrityOfSlashing  integrityOfReturnFunds  noRedeemOutOfUnstakeWindow  totalSupplyDoesNotDropToZero cooldownCorrectness rewardsGetterEquivalentClaim rewardsMonotonicallyIncrease  rewardsIncreaseForNonClaimFunctions indexesMonotonicallyIncrease  slashingDontDecreaseExchangeRate returnFundsDontIncreaseExchangeRate exchangeRateNeverZero  integrityOfRedeem previewStakeEquivalentStake  redeem_in_post_slashing_period  exchangeRate_cant_changed_unless_slash_returnFunds cooldown_always_updates_cooldown_info  when_changing_bal_update_rewards_must_be_called transfer_from_user_to_itself_changes_no_balance slash_increases_exchangeRate  returnFunds_decreases_exchangeRate  redeem_not_reverting
-          - allProps.conf --rule_sanity none --rule slashing_cant_occur_during_post_slashing_period
+          - frontRun.conf --rule front_run__stake
+          - frontRun.conf --rule front_run__stake__on_stakeWithPermit
           - frontRun.conf --rule front_run__redeem
+          - frontRun.conf --rule front_run__redeem__on_redeemOnBahalf
           - frontRun.conf --rule front_run__balance
           - frontRun.conf --rule front_run__cooldown_info
-          - frontRun.conf --rule front_run__stake
+          - allProps.conf --rule  integrityOfStaking  noStakingPostSlashingPeriod noSlashingMoreThanMax integrityOfSlashing  integrityOfReturnFunds  noRedeemOutOfUnstakeWindow  totalSupplyDoesNotDropToZero cooldownCorrectness rewardsGetterEquivalentClaim rewardsMonotonicallyIncrease  rewardsIncreaseForNonClaimFunctions indexesMonotonicallyIncrease  slashingDontDecreaseExchangeRate returnFundsDontIncreaseExchangeRate exchangeRateNeverZero  integrityOfRedeem previewStakeEquivalentStake  redeem_in_post_slashing_period  exchangeRate_cant_changed_unless_slash_returnFunds cooldown_always_updates_cooldown_info  when_changing_bal_update_rewards_must_be_called transfer_from_user_to_itself_changes_no_balance slash_increases_exchangeRate  returnFunds_decreases_exchangeRate  redeem_not_reverting
+          - allProps.conf --rule_sanity none --rule slashing_cant_occur_during_post_slashing_period
+          - propertiesWithSummarization.conf
+          - invariants.conf
+
+
           
